@@ -38,7 +38,7 @@ public class JdbcUserDao implements UserDao {
 
     @Override
     public User getUserById(int userId) {
-        String sql = "SELECT user_id, username, password_hash FROM tenmo_user WHERE user_id = ?";
+        String sql = "SELECT user_id, username, password_hash, balance FROM tenmo_user WHERE user_id = ?";
         SqlRowSet results = jdbcTemplate.queryForRowSet(sql, userId);
         if (results.next()) {
             return mapRowToUser(results);
@@ -50,7 +50,7 @@ public class JdbcUserDao implements UserDao {
     @Override
     public List<User> findAll() {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT user_id, username, password_hash FROM tenmo_user";
+        String sql = "SELECT user_id, username, password_hash, balance FROM tenmo_user";
 
         SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
         while (results.next()) {
@@ -65,7 +65,7 @@ public class JdbcUserDao implements UserDao {
     public User findByUsername(String username) {
         if (username == null) throw new IllegalArgumentException("Username cannot be null");
 
-        String sql = "SELECT user_id, username, password_hash FROM tenmo_user WHERE username = ?;";
+        String sql = "SELECT user_id, username, password_hash, balance FROM tenmo_user WHERE username = ?;";
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, username);
         if (rowSet.next()) {
             return mapRowToUser(rowSet);
@@ -84,12 +84,26 @@ public class JdbcUserDao implements UserDao {
 
         return (newUserId != null);
     }
+//    @Override
+//    public int getBalanceByUserId(int id){
+//        if (id == 0) throw new IllegalArgumentException("User ID cannot be null");
+//
+//        int balance = 0;
+//        try {
+//            balance = jdbcTemplate.queryForObject("SELECT balance FROM tenmo_user WHERE user_id = ?", int.class, id);
+//        } catch (NullPointerException | EmptyResultDataAccessException e) {
+//            throw new UsernameNotFoundException("User " + id + " was not found.");
+//        }
+//
+//        return balance;
+//    }
 
     private User mapRowToUser(SqlRowSet rs) {
         User user = new User();
         user.setId(rs.getInt("user_id"));
         user.setUsername(rs.getString("username"));
         user.setPassword(rs.getString("password_hash"));
+        user.setBalance(rs.getInt("balance"));
         user.setActivated(true);
         user.setAuthorities("USER");
         return user;

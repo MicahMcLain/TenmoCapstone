@@ -10,6 +10,7 @@ public class User {
 
    private int id;
    private String username;
+   private int balance;
    @JsonIgnore // prevent from being sent to client
    private String password;
    @JsonIgnore
@@ -18,10 +19,11 @@ public class User {
 
    public User() { }
 
-   public User(int id, String username, String password, String authorities) {
+   public User(int id, String username, String password, String authorities, int balance) {
       this.id = id;
       this.username = username;
       this.password = password;
+      this.balance = balance;
       if(authorities != null) this.setAuthorities(authorities);
       this.activated = true;
    }
@@ -40,6 +42,14 @@ public class User {
 
    public void setUsername(String username) {
       this.username = username;
+   }
+
+   public int getBalance() {
+      return balance;
+   }
+
+   public void setBalance(int balance) {
+      this.balance = balance;
    }
 
    public String getPassword() {
@@ -99,4 +109,5 @@ public class User {
               ", authorities=" + authorities +
               '}';
    }
+
 }
