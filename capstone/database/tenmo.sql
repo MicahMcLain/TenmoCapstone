@@ -13,7 +13,8 @@ CREATE TABLE tenmo_user (
 	user_id int NOT NULL DEFAULT nextval('seq_user_id'),
 	username varchar(50) UNIQUE NOT NULL,
 	password_hash varchar(200) NOT NULL,
-	balance int NOT NULL,
+	balance decimal (10, 2) DEFAULT 1000.00
+	check(balance >= 0),
 	role varchar(20),
 	CONSTRAINT PK_tenmo_user PRIMARY KEY (user_id),
 	CONSTRAINT UQ_username UNIQUE (username)
@@ -24,7 +25,7 @@ CREATE TABLE transactions (
 	sending_user_id int NOT NULL,
 	receiving_user_id int NOT NULL,
 	amount int NOT NULL,
-	date_time date NOT NULL,
+	date_time timestamp NOT NULL,
 	status int null,
 	CONSTRAINT PK_transactions_id PRIMARY KEY (transactions_id),
 	CONSTRAINT FK_sending_user_id FOREIGN KEY (sending_user_id) REFERENCES tenmo_user(user_id),
