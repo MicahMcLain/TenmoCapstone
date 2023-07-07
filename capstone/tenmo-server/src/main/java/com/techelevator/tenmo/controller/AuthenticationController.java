@@ -19,6 +19,7 @@ import com.techelevator.tenmo.security.jwt.TokenProvider;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
+import java.util.List;
 
 /**
  * Controller to authenticate users.
@@ -69,6 +70,13 @@ public class AuthenticationController {
             return user;
         }
     }
+
+    @PreAuthorize("permitAll")
+    @RequestMapping(value = "/showUsers", method = RequestMethod.GET)
+    public List<User> showUsers () {
+        return userDao.findAll();
+    }
+
 
 }
 
