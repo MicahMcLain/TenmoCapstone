@@ -10,7 +10,7 @@ public class User {
 
    private int id;
    private String username;
-   private int balance;
+   private double balance;
    @JsonIgnore // prevent from being sent to client
    private String password;
    @JsonIgnore
@@ -19,7 +19,7 @@ public class User {
 
    public User() { }
 
-   public User(int id, String username, String password, String authorities, int balance) {
+   public User(int id, String username, String password, String authorities, double balance) {
       this.id = id;
       this.username = username;
       this.password = password;
@@ -44,11 +44,11 @@ public class User {
       this.username = username;
    }
 
-   public int getBalance() {
+   public double getBalance() {
       return balance;
    }
 
-   public void setBalance(int balance) {
+   public void setBalance(double balance) {
       this.balance = balance;
    }
 

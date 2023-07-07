@@ -1,24 +1,22 @@
 package com.techelevator.tenmo.model;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.*;
 import java.sql.Timestamp;
 
-public class Transactions {
+public class Transaction {
     private int id;
     private int sendingUserId;
     @NotNull
     private int receivingUserId;
     @NotNull
-    @Min(1)
-    @Max(1000000)
+    @Positive
+    @Max(10000000)
     private double amount;
     private Timestamp date;
 
     private int status;
 
-    public Transactions(int id, int sendingUserId, int receivingUserId, double amount, Timestamp date, int status) {
+    public Transaction(int id, int sendingUserId, int receivingUserId, double amount, Timestamp date, int status) {
         this.id = id;
         this.sendingUserId = sendingUserId;
         this.receivingUserId = receivingUserId;
@@ -27,7 +25,7 @@ public class Transactions {
         this.status = status;
     }
 
-    public Transactions() {
+    public Transaction() {
     }
 
     public int getId() {

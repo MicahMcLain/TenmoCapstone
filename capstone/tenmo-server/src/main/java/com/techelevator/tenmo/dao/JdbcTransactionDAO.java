@@ -1,6 +1,6 @@
 package com.techelevator.tenmo.dao;
 
-import com.techelevator.tenmo.model.Transactions;
+import com.techelevator.tenmo.model.Transaction;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -16,20 +16,20 @@ public class JdbcTransactionDAO implements TransactionDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private Transactions mapRowToTransaction(SqlRowSet results) {
-        Transactions transaction = new Transactions();
-        transaction.setDate(results.getTimestamp("date_time"));
-        transaction.setAmount(results.getInt("amount"));
+    private Transaction mapRowToTransaction(SqlRowSet results) {
+        Transaction transaction = new Transaction();
         transaction.setId(results.getInt("transactions_id"));
         transaction.setSendingUserId(results.getInt("sending_user_id"));
         transaction.setReceivingUserId(results.getInt("receiving_user_id"));
+        transaction.setAmount(results.getInt("amount"));
+        transaction.setDate(results.getTimestamp("date_time"));
         transaction.setStatus(results.getInt("status"));
         return transaction;
     }
 
     @Override
-    public Transactions getTransactionsByUserId(int id) {
-        Transactions transaction = null;
+    public Transaction getTransactionsByUserId(int id) {
+        Transaction transaction = null;
         String sql = "SELECT transactions_id, sending_user_id, receiving_user_id, amount, date_time, status " +
                 "FROM transactions WHERE sending_user_id = ?";
         try {
@@ -46,8 +46,8 @@ public class JdbcTransactionDAO implements TransactionDAO {
     }
 
     @Override
-    public Transactions getTransactionsByUserIdAndTransactionId(int userId, int transactionId) {
-        Transactions transaction = null;
+    public Transaction getTransactionsByUserIdAndTransactionId(int userId, int transactionId) {
+        Transaction transaction = null;
         String sql = "SELECT transactions_id, sending_user_id, receiving_user_id, amount, date_time, status " +
                 "FROM transactions WHERE sending_user_id = ? AND transactions_id = ?";
         try {
@@ -64,16 +64,15 @@ public class JdbcTransactionDAO implements TransactionDAO {
     }
 
     @Override
-    public Transactions createTransaction(Transactions transaction) {
-        Transactions newTransaction = null;
+    public void createTransaction(Transaction transaction) {
+        Transaction newTransaction = null;
         String create = "UPDATE tenmo_user SET balance = balance + ? WHERE user_id = ?; " +
                 "UPDATE tenmo_user SET balance = balance - ? WHERE user_id = ?; " +
-                "INSERT INTO transactions VALUES (?,?) RETURNING transactions_id;";
+                "INSERT INTO transactions (amount, receiving_user_id, sending_user_id) VALUES (?,?,?);";
         try {
-            int newTransactionId = jdbcTemplate.queryForObject(create, int.class, transaction.getAmount(),
+            jdbcTemplate.update(create, transaction.getAmount(),
                     transaction.getReceivingUserId(), transaction.getAmount(), transaction.getSendingUserId(),
-                    transaction.getAmount(), transaction.getReceivingUserId());
-            newTransaction = getTransactionsByUserIdAndTransactionId(transaction.getSendingUserId(), newTransactionId);
+                    transaction.getAmount(), transaction.getReceivingUserId(), transaction.getSendingUserId());
         } catch (CannotGetJdbcConnectionException e) {
             throw new DaoException("Unable to connect to server or database", e);
         } catch (BadSqlGrammarException e) {
@@ -81,9 +80,5 @@ public class JdbcTransactionDAO implements TransactionDAO {
         } catch (DataIntegrityViolationException e) {
             throw new DaoException("Data integrity violation", e);
         }
-        finally {
-            System.out.println();
-        }
-        return newTransaction;
     }
 }

@@ -2,7 +2,7 @@ package com.techelevator.tenmo.controller;
 
 import com.techelevator.tenmo.dao.TransactionDAO;
 import com.techelevator.tenmo.dao.UserDao;
-import com.techelevator.tenmo.model.Transactions;
+import com.techelevator.tenmo.model.Transaction;
 import com.techelevator.tenmo.model.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -27,15 +27,15 @@ public class TransactionController {
     //post new transaction
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(value = "/sendMoney", method = RequestMethod.POST)
-    public Transactions sendMoney(Principal principal, @Valid @RequestBody Transactions transaction) throws Exception {
+    public void sendMoney(Principal principal, @Valid @RequestBody Transaction transaction) throws Exception {
         User userFrom = userDao.findByUsername(principal.getName());
+        transaction.setSendingUserId(userFrom.getId());
         if (transaction.getAmount() > userFrom.getBalance()) {
             throw new Exception("You can't send more money than you have!");
         }
-        if(transaction.getAmount() < 1){
-            throw new Exception("You must send more than $1.00");
+        if(transaction.getAmount() < 0.01){
+            throw new Exception("You must send a valid amount");
         }
         transactionDAO.createTransaction(transaction);
-        return transaction;
     }
 }

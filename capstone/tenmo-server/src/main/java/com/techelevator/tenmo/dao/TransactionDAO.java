@@ -1,16 +1,13 @@
 package com.techelevator.tenmo.dao;
 
-import com.techelevator.tenmo.model.Transactions;
-import com.techelevator.tenmo.model.User;
-
-import java.sql.SQLException;
+import com.techelevator.tenmo.model.Transaction;
 
 public interface TransactionDAO {
 
-    Transactions getTransactionsByUserId(int id);
+    Transaction getTransactionsByUserId(int id);
     //Get transactions by user id
-    Transactions getTransactionsByUserIdAndTransactionId(int userId, int transactionId);
+    Transaction getTransactionsByUserIdAndTransactionId(int userId, int transactionId);
 
-    Transactions createTransaction(Transactions transaction);
+    void createTransaction(Transaction transaction);
     //Get transactions by transaction id
 }
