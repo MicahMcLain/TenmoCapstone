@@ -8,12 +8,12 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class JdbcTransactionDAO implements TransactionDAO {
+    public enum transactionType{UNKNOWN, PENDING, APPROVED, REJECTED}
     private final JdbcTemplate jdbcTemplate;
 
     public JdbcTransactionDAO(JdbcTemplate jdbcTemplate) {
@@ -69,27 +69,22 @@ public class JdbcTransactionDAO implements TransactionDAO {
     }
 
     @Override
-    public void createTransaction(Transaction transaction) {
+    public void transferMoney(Transaction transaction) throws Exception {
         Transaction newTransaction = null;
-        String create = "UPDATE tenmo_user SET balance = balance + ? WHERE user_id = ?; " +
+        if (transaction.getAmount() < 0.01) {
+            throw new Exception("You must send a valid amount");
+        }
+        String create = "BEGIN TRANSACTION; UPDATE tenmo_user SET balance = balance + ? WHERE user_id = ?; " +
                 "UPDATE tenmo_user SET balance = balance - ? WHERE user_id = ?; " +
-                "INSERT INTO transactions (amount, receiving_user_id, sending_user_id) VALUES (?,?,?);";
-        try {
+                "INSERT INTO transactions (amount, receiving_user_id, sending_user_id) VALUES (?,?,?); COMMIT;";
+        if(transaction.getReceivingUserId() == (transaction.getSendingUserId())) {
+            throw new Exception("You cannot send money to yourself");
+        }
             jdbcTemplate.update(create, transaction.getAmount(),
                     transaction.getReceivingUserId(), transaction.getAmount(), transaction.getSendingUserId(),
                     transaction.getAmount(), transaction.getReceivingUserId(), transaction.getSendingUserId());
-            if(transaction.getReceivingUserId() == (transaction.getSendingUserId())){
-                throw new Exception("You cannot send money to yourself");
-            }
-        } catch (CannotGetJdbcConnectionException e) {
-            throw new DaoException("Unable to connect to server or database", e);
-        } catch (BadSqlGrammarException e) {
-            throw new DaoException("SQL syntax error", e);
-        } catch (DataIntegrityViolationException e) {
-            throw new DaoException("Data integrity violation", e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+
+
     }
 
     @Override
@@ -119,17 +114,41 @@ public class JdbcTransactionDAO implements TransactionDAO {
     }
 
     @Override
-    public void startTransaction(Transaction transaction) {
-        String create = "START TRANSACTION; INSERT INTO transactions (amount, receiving_user_id, sending_user_id, status) VALUES (?,?,?,?);";
-        try {
+    public void createPendingTransaction(Transaction transaction) {
+        transaction.setStatus(transactionType.PENDING.ordinal());
+        String create = "INSERT INTO transactions (amount, receiving_user_id, sending_user_id, status) VALUES (?,?,?,?);";
             jdbcTemplate.update(create, transaction.getAmount(), transaction.getReceivingUserId(),
                     transaction.getSendingUserId(), transaction.getStatus());
-            if(transaction.getStatus() != 1){
-                throw new Exception("You must set status to pending (1)");
-            }
-            if(transaction.getReceivingUserId() == (transaction.getSendingUserId())){
-                throw new Exception("You cannot send money to yourself");
-            }
+    }
+    //approve transaction method
+    @Override
+    public void approveTransaction(Transaction transaction){
+        transaction.setStatus(transactionType.APPROVED.ordinal());
+        String approve = "UPDATE transaction SET status = 2 WHERE transaction_id = ?";
+        jdbcTemplate.update(approve, transaction.getId());
+    }
+    //decline transaction method
+    @Override
+    public void rejectTransaction(Transaction transaction){
+        transaction.setStatus(transactionType.REJECTED.ordinal());
+        String reject = "UPDATE transaction SET status = 3 WHERE transaction_id = ?";
+        jdbcTemplate.update(reject, transaction.getId());
+    }
+    public void declineTransaction(Transaction transaction){
+        Transaction updated = null;
+        //how are we going to get status? can only update to 2 or 3
+        //add numberof rows updated
+        String sql = "UPDATE transactions SET status = 3 WHERE transaction_id = ?;";
+        jdbcTemplate.update(sql, transaction.getId());
+
+    }
+    //do we actually need to delete any of the transactions?
+    @Override
+    public int delete(int id) {
+        int numberOfRows = 0;
+        String sql = "DELETE FROM transactions WHERE transaction_id = ?";
+        try {
+            numberOfRows = jdbcTemplate.update(sql, id);
         } catch (CannotGetJdbcConnectionException e) {
             throw new DaoException("Unable to connect to server or database", e);
         } catch (BadSqlGrammarException e) {
@@ -139,5 +158,6 @@ public class JdbcTransactionDAO implements TransactionDAO {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        return numberOfRows;
     }
 }
